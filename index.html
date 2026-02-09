@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Time Difference Practice – Mr. McLean Math</title>
+  <style>
+    :root{
+      --bg:#f4f6fb;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --accent:#2563eb;
+      --accent2:#7c3aed;
+      --good:#16a34a;
+      --bad:#dc2626;
+      --border:#e5e7eb;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --radius:18px;
+      --focus:0 0 0 3px rgba(37,99,235,.25);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 20% 10%, rgba(124,58,237,.10), transparent 60%),
+                  radial-gradient(1200px 600px at 80% 20%, rgba(37,99,235,.10), transparent 60%),
+                  var(--bg);
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:18px 14px 30px;}
+    header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+    .titleBox{display:flex;flex-direction:column;gap:2px;min-width:260px;}
+    .title{font-size:clamp(22px, 3vw, 34px);font-weight:900;letter-spacing:.2px;line-height:1.1;text-shadow:0 2px 0 rgba(255,255,255,.9);}
+    .subtitle{color:var(--muted);font-size:14px;}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px;}
+    @media (min-width: 900px){ .grid{grid-template-columns:1.4fr .6fr;align-items:start;} }
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .seg{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,.85));}
+    label{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.2px;}
+    select, button, input{font-family:inherit;font-size:14px;}
+    select, input{border:1px solid var(--border);border-radius:12px;padding:10px 10px;background:#fff;outline:none;}
+    select:focus, input:focus, button:focus{box-shadow:var(--focus);outline:none;}
+
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;}
+    .tabBtn{border:1px solid var(--border);background:#fff;padding:10px 12px;border-radius:999px;cursor:pointer;font-weight:800;}
+    .tabBtn.active{border-color:rgba(37,99,235,.35);background:linear-gradient(180deg, rgba(37,99,235,.12), rgba(124,58,237,.10));}
+
+    .qBox{padding:14px;border-radius:18px;border:1px solid var(--border);background:linear-gradient(180deg, rgba(37,99,235,.05), rgba(255,255,255,1));}
+    .qTitle{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+    .qLabel{font-weight:900;letter-spacing:.2px;font-size:16px;}
+    .qText{font-size:18px;line-height:1.35;font-weight:800;}
+    .smallNote{margin-top:6px;color:var(--muted);font-size:13px;}
+
+    .answerRow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+    .timeFields{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .field{display:flex;flex-direction:column;gap:6px;}
+    .field input{width:92px;font-weight:900;font-size:18px;padding:10px 12px;border-radius:14px;font-family:var(--mono);}
+    .field.wide input{width:170px;}
+    .colon{font-weight:1000;font-size:20px;padding:0 2px;margin-top:24px;font-family:var(--mono);color:#111827;}
+
+    .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+    button{border:none;border-radius:14px;padding:11px 14px;font-weight:900;cursor:pointer;transition:transform .03s ease;}
+    button:active{transform:translateY(1px);}
+    .primary{background:linear-gradient(90deg, var(--accent), var(--accent2));color:#fff;}
+    .ghost{background:#fff;border:1px solid var(--border);color:var(--text);}
+
+    .feedback{margin-top:12px;padding:12px;border-radius:16px;border:1px solid var(--border);background:#fff;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;}
+    .fbLeft{display:flex;flex-direction:column;gap:6px;}
+    .fbBig{font-weight:1000;font-size:18px;}
+    .fbBig.good{color:var(--good);}
+    .fbBig.bad{color:var(--bad);}
+    .steps{width:100%;margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;color:#111827;font-family:var(--mono);font-size:13px;white-space:pre-wrap;display:none;}
+    .steps.show{display:block;}
+
+    .sideCard h3{margin:0 0 10px;font-size:16px;font-weight:1000;}
+    .statGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .stat{border:1px solid var(--border);border-radius:16px;padding:10px;background:linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,.9));}
+    .stat .k{color:var(--muted);font-size:12px;font-weight:900;letter-spacing:.2px;}
+    .stat .v{font-size:18px;font-weight:1000;margin-top:4px;font-family:var(--mono);}
+
+    details{border:1px solid var(--border);border-radius:16px;padding:10px 12px;background:#fff;margin-top:12px;}
+    summary{cursor:pointer;font-weight:1000;}
+    .incorrectList{margin-top:10px;display:flex;flex-direction:column;gap:10px;}
+    .incItem{border:1px solid var(--border);border-radius:14px;padding:10px;background:#fff;}
+    .incQ{font-weight:900;margin-bottom:6px;}
+    .incA{font-family:var(--mono);color:#111827;font-size:13px;white-space:pre-wrap;}
+
+    .footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12px;}
+
+    /* High contrast */
+    body.hc{
+      --bg:#0b1220;--card:#0f172a;--text:#f9fafb;--muted:#cbd5e1;--border:#334155;
+      --shadow:0 10px 30px rgba(0,0,0,.45);
+    }
+    body.hc .qBox{background:linear-gradient(180deg, rgba(37,99,235,.18), rgba(15,23,42,1));}
+    body.hc select, body.hc input{background:#0b1220;color:#f9fafb;border-color:#334155;}
+    body.hc .ghost{background:#0b1220;color:#f9fafb;border-color:#334155;}
+    body.hc .feedback{background:#0b1220;border-color:#334155;}
+    body.hc .colon{color:#f9fafb;}
+    body.hc .incItem{background:#0b1220;border-color:#334155;}
+    body.hc .stat{background:#0b1220;border-color:#334155;}
+    body.hc details{background:#0b1220;border-color:#334155;}
+
+    /* Worksheet */
+    .wsTop{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+    .wsHeader{font-weight:1000;font-size:15px;margin:4px 0 8px;color:var(--muted);}
+    .wsList{display:flex;flex-direction:column;gap:10px;}
+    .wsItem{border:1px solid var(--border);border-radius:16px;padding:10px;background:#fff;}
+    body.hc .wsItem{background:#0b1220;border-color:#334155;}
+    .wsQ{font-weight:900;margin-bottom:6px;}
+    .wsAns{display:none;font-family:var(--mono);font-size:13px;color:#111827;border-top:1px dashed var(--border);margin-top:8px;padding-top:8px;white-space:pre-wrap;}
+    body.hc .wsAns{color:#f9fafb;}
+    .wsItem.revealed .wsAns{display:block;}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;font-weight:900;}
+    body.hc .chip{background:#0b1220;border-color:#334155;}
+    .devPanel{margin-top:12px;font-family:var(--mono);font-size:12px;white-space:pre-wrap;border:1px solid var(--border);border-radius:16px;padding:10px;background:#fff;display:none;}
+    body.hc .devPanel{background:#0b1220;border-color:#334155;}
+
+    .wsError{
+      display:none;border:1px solid rgba(220,38,38,.25);background:rgba(220,38,38,.08);
+      color:#991b1b;padding:10px;border-radius:14px;font-weight:800;margin-top:10px;
+    }
+    body.hc .wsError{color:#fecaca;border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.10);}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="titleBox">
+        <div class="title">Time Difference Practice</div>
+        <div class="subtitle">Elapsed time between two clock times (24-hour).</div>
+      </div>
+
+      <div class="controls">
+        <div class="seg">
+          <label for="modeSel">Mode</label>
+          <select id="modeSel" aria-label="Mode">
+            <option value="regular">Regular</option>
+            <option value="advanced">Advanced</option>
+            <option value="random">Random</option>
+          </select>
+        </div>
+
+        <div class="seg">
+          <label for="timerOn">Timer</label>
+          <select id="timerOn" aria-label="Timer on or off">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+          <select id="timerLen" aria-label="Timer length">
+            <option value="30">30s</option>
+            <option value="60">60s</option>
+            <option value="90">90s</option>
+            <option value="120">120s</option>
+          </select>
+        </div>
+
+        <div class="seg">
+          <label for="soundOn">Sound</label>
+          <select id="soundOn" aria-label="Sound on or off">
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+
+        <div class="seg">
+          <label for="hcOn">High contrast</label>
+          <select id="hcOn" aria-label="High contrast on or off">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tabBtn active" id="tabGame" role="tab" aria-selected="true" type="button">Game</button>
+      <button class="tabBtn" id="tabWs" role="tab" aria-selected="false" type="button">Worksheet</button>
+    </div>
+
+    <div class="grid" style="margin-top:12px;">
+      <div class="card" id="mainCard">
+        <!-- GAME -->
+        <div id="gameView">
+          <div class="qBox" aria-live="polite">
+            <div class="qTitle">
+              <div class="qLabel">Question</div>
+              <div class="chip" id="modeChip" aria-label="Current mode">Regular</div>
+            </div>
+
+            <div class="qText" id="qText">Press Next to begin.</div>
+            <div class="smallNote" id="qNote"></div>
+
+            <div class="answerRow">
+              <div class="timeFields" id="timeFields" aria-label="Answer fields"></div>
+            </div>
+
+            <div class="btnRow">
+              <button class="primary" id="btnSubmit" type="button">Submit (Enter)</button>
+              <button class="ghost" id="btnNext" type="button">Next</button>
+              <button class="ghost" id="btnClear" type="button">Clear (Esc)</button>
+            </div>
+
+            <div class="feedback" id="feedback" style="display:none;">
+              <div class="fbLeft">
+                <div class="fbBig" id="fbBig"></div>
+                <div class="smallNote" id="fbSmall"></div>
+              </div>
+              <div class="btnRow" style="margin-top:0;">
+                <button class="ghost" id="btnShowSteps" style="display:none;" type="button">Show Steps</button>
+              </div>
+              <div class="steps" id="stepsBox"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WORKSHEET -->
+        <div id="wsView" style="display:none;">
+          <div class="wsTop">
+            <div class="seg">
+              <label for="wsCount">Questions</label>
+              <select id="wsCount" aria-label="Worksheet question count">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+              </select>
+            </div>
+
+            <button class="primary" id="btnGenWs" type="button">Generate</button>
+            <button class="ghost" id="btnRevealAll" type="button">Reveal all</button>
+            <button class="ghost" id="btnHideAll" type="button">Hide all</button>
+          </div>
+
+          <div class="wsHeader" id="wsHeader">
+            Instruction: Find the elapsed time between the two times. (Read each question carefully: it tells you how to answer.)
+          </div>
+
+          <div class="wsList" id="wsList"></div>
+          <div class="wsError" id="wsError"></div>
+        </div>
+
+        <div class="devPanel" id="devPanel" aria-label="Developer tests panel"></div>
+      </div>
+
+      <div class="card sideCard">
+        <h3>Progress</h3>
+        <div class="statGrid">
+          <div class="stat"><div class="k">Total</div><div class="v" id="stTotal">0</div></div>
+          <div class="stat"><div class="k">Correct</div><div class="v" id="stCorrect">0</div></div>
+          <div class="stat"><div class="k">Accuracy</div><div class="v" id="stAcc">0%</div></div>
+          <div class="stat"><div class="k">Score</div><div class="v" id="stScore">0</div></div>
+          <div class="stat"><div class="k">Streak</div><div class="v" id="stStreak">0</div></div>
+          <div class="stat"><div class="k">Timer</div><div class="v" id="stTimer">Off</div></div>
+        </div>
+
+        <details style="margin-top:12px;">
+          <summary>Session summary</summary>
+          <div style="margin-top:10px;">
+            <div class="smallNote" id="sumLine">Start the game to see stats.</div>
+            <details style="margin-top:10px;">
+              <summary>Incorrect list</summary>
+              <div class="incorrectList" id="incorrectList"></div>
+            </details>
+          </div>
+        </details>
+
+        <details style="margin-top:12px;">
+          <summary>Keyboard shortcuts</summary>
+          <div class="smallNote" style="margin-top:8px; line-height:1.4;">
+            Enter: Submit. After a correct answer, Enter: Next.<br/>
+            Esc: Clear answer fields.
+          </div>
+        </details>
+
+        <div class="footer">Created by Mr. McLean Math</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  const params = new URLSearchParams(location.search);
+  const DEV = params.get("dev") === "1";
+
+  /* ---------- helpers ---------- */
+  const randInt = (rng, lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
+  const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  function mulberry32(seed){
+    let t = seed >>> 0;
+    return function(){
+      t += 0x6D2B79F5;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), x | 1);
+      x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function todaySeed(){
+    const d = new Date();
+    return (d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate()) >>> 0;
+  }
+  function timeToMinutes(h, m){ return h * 60 + m; }
+  function minutesToTime(mins){
+    mins = ((mins % 1440) + 1440) % 1440;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return {h, m};
+  }
+  function fmtClock(h, m){ return `${pad2(h)}:${pad2(m)}`; }
+  function fmtDurationHM(h, m){ return `${h} h ${m} min`; }
+  function fmtDurationDHM(d, h, m){
+    const dWord = d === 1 ? "day" : "days";
+    return `${d} ${dWord} ${h} h ${m} min`;
+  }
+
+  function parseIntSafe(s){
+    if (typeof s !== "string") return null;
+    const t = s.trim();
+    if (!t) return null;
+    if (!/^-?\d+$/.test(t)) return null;
+    return parseInt(t, 10);
+  }
+
+  /* ---------- sound ---------- */
+  let audioCtx = null;
+  function ensureAudio(){
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function beep(type){
+    if (ui.soundOn.value !== "on") return;
+    try{
+      ensureAudio();
+      const ctx = audioCtx;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = (type === "good") ? 660 : 220;
+      g.gain.value = (type === "good") ? 0.06 : 0.07;
+      o.connect(g); g.connect(ctx.destination);
+      const now = ctx.currentTime;
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+      o.start(now);
+      o.stop(now + 0.16);
+    } catch(e){}
+  }
+
+  /* ---------- UI refs ---------- */
+  const ui = {
+    modeSel: document.getElementById("modeSel"),
+    timerOn: document.getElementById("timerOn"),
+    timerLen: document.getElementById("timerLen"),
+    soundOn: document.getElementById("soundOn"),
+    hcOn: document.getElementById("hcOn"),
+
+    tabGame: document.getElementById("tabGame"),
+    tabWs: document.getElementById("tabWs"),
+    gameView: document.getElementById("gameView"),
+    wsView: document.getElementById("wsView"),
+
+    qText: document.getElementById("qText"),
+    qNote: document.getElementById("qNote"),
+    modeChip: document.getElementById("modeChip"),
+    timeFields: document.getElementById("timeFields"),
+
+    btnSubmit: document.getElementById("btnSubmit"),
+    btnNext: document.getElementById("btnNext"),
+    btnClear: document.getElementById("btnClear"),
+
+    feedback: document.getElementById("feedback"),
+    fbBig: document.getElementById("fbBig"),
+    fbSmall: document.getElementById("fbSmall"),
+    btnShowSteps: document.getElementById("btnShowSteps"),
+    stepsBox: document.getElementById("stepsBox"),
+
+    stTotal: document.getElementById("stTotal"),
+    stCorrect: document.getElementById("stCorrect"),
+    stAcc: document.getElementById("stAcc"),
+    stScore: document.getElementById("stScore"),
+    stStreak: document.getElementById("stStreak"),
+    stTimer: document.getElementById("stTimer"),
+
+    sumLine: document.getElementById("sumLine"),
+    incorrectList: document.getElementById("incorrectList"),
+
+    wsCount: document.getElementById("wsCount"),
+    btnGenWs: document.getElementById("btnGenWs"),
+    btnRevealAll: document.getElementById("btnRevealAll"),
+    btnHideAll: document.getElementById("btnHideAll"),
+    wsList: document.getElementById("wsList"),
+    wsHeader: document.getElementById("wsHeader"),
+    wsError: document.getElementById("wsError"),
+
+    devPanel: document.getElementById("devPanel")
+  };
+
+  /* ---------- content pools ---------- */
+  const names = [
+    "Noomi","Elliot","Jennifer","Maja","Oskar","Amina","Leo","Alva","Nora","William",
+    "Sofia","Liam","Emma","Oliver","Ava","Ella","Lucas","Mila","Hugo","Freya",
+    "Isak","Thea","Aron","Ines","Axel","Saga","Elin","Vera","Molly","Felix",
+    "Adam","Jasmine","Amir","Sara","Omar","Linnea","Ebba","Hanna","Ida","Klara",
+    "Malik","Yara","Nina","Tobias","Samuel","Elias","Aria","Zara","Daniel","Mason",
+    "Chloe","Grace","Henry","Ivy","Jack","Layla","Noah","Ruby","Theo","Zoe",
+    "Callum","Fatima","Yusuf","Aisha","Mariam","Kian","Sienna","Emilia","Jonas","Matteo"
+  ];
+  const contexts = [
+    "a film", "a lesson", "a train trip", "a bus ride", "football practice",
+    "swim practice", "a study session", "a meeting", "a rehearsal", "a class",
+    "a workout", "a museum visit", "a library visit", "a concert"
+  ];
+
+  /* ---------- state ---------- */
+  const state = {
+    rng: mulberry32((todaySeed() ^ 0xA5C3E21) >>> 0),
+    current: null,
+    awaitingNext: false,
+    timerId: null,
+    timeLeft: 0,
+
+    total: 0,
+    correct: 0,
+    score: 0,
+    streak: 0,
+    incorrect: [],
+
+    history: [],
+    historyMax: 50
+  };
+
+  function chosenMode(){
+    const v = ui.modeSel.value;
+    if (v === "random") return (state.rng() < 0.5 ? "regular" : "advanced");
+    return v;
+  }
+  function setHighContrast(on){
+    document.body.classList.toggle("hc", on);
+  }
+
+  /* ---------- generator rules per your message ---------- */
+  // Regular:
+  // - no crossing midnight
+  // - minutes are multiples of 5
+  // - answer format: ALWAYS hours+minutes unless elapsed < 60 (then minutes only)
+  //
+  // Advanced:
+  // - minutes 00-59 allowed
+  // - may cross midnight
+  // - may include day differences up to 3 days
+  // - minutes-only questions about 30% of NON-day questions
+
+  function niceMinute(rng){ return pick(rng, [0,5,10,15,20,25,30,35,40,45,50,55]); }
+  function anyMinute(rng){ return randInt(rng, 0, 59); }
+
+  function genStartTime(mode, rng){
+    if (mode === "regular"){
+      return { h: randInt(rng, 6, 22), m: niceMinute(rng) };
+    }
+    return { h: randInt(rng, 0, 23), m: anyMinute(rng) };
+  }
+
+  function signature(q){
+    const a = q.answer;
+    return [
+      q.mode, q.type, q.prompt,
+      a.days ?? "", a.hours ?? "", a.minutes ?? "", a.minutesOnly ?? ""
+    ].join("|").slice(0, 400);
+  }
+
+  function makeQuestion(mode, opts){
+    const rng = state.rng;
+    const who = pick(rng, names);
+    const ctx = pick(rng, contexts);
+
+    if (mode === "regular"){
+      // Choose elapsed; ensure end stays same day.
+      // We purposely generate a mix of <60 and >=60 so students see both formats,
+      // BUT minutes-only only happens when elapsed < 60.
+      const start = genStartTime("regular", rng);
+
+      // Decide if this one should be <60 (minutes-only) or >=60 (hours+minutes)
+      const wantUnderHour = (rng() < 0.35); // about 35% of regular questions end up being minutes-only
+
+      let elapsed;
+      if (wantUnderHour){
+        // 5..55 minutes (multiples of 5)
+        elapsed = pick(rng, [5,10,15,20,25,30,35,40,45,50,55]);
+      } else {
+        // 1..6 hours plus 0..55 minutes (multiples of 5)
+        const h = randInt(rng, 1, 6);
+        const m = niceMinute(rng);
+        elapsed = h*60 + m;
+        if (elapsed < 60) elapsed = 60; // just in case
+      }
+
+      // Ensure no midnight crossover
+      while (timeToMinutes(start.h, start.m) + elapsed >= 1440){
+        start.h = randInt(rng, 6, 22);
+        start.m = niceMinute(rng);
+      }
+
+      const end = minutesToTime(timeToMinutes(start.h, start.m) + elapsed);
+
+      const base = (rng() < 0.5)
+        ? `${who} had ${ctx} from ${fmtClock(start.h,start.m)} to ${fmtClock(end.h,end.m)}.`
+        : `Between ${fmtClock(start.h,start.m)} and ${fmtClock(end.h,end.m)}:`;
+
+      if (elapsed < 60){
+        return {
+          mode,
+          type: "elapsed_minutes",
+          fields: 1,
+          prompt: `${base} How many minutes is that? Answer in minutes.`,
+          startH: start.h, startM: start.m, endH: end.h, endM: end.m,
+          answer: { minutesOnly: elapsed },
+          steps: () => {
+            const s = timeToMinutes(start.h, start.m);
+            const e = timeToMinutes(end.h, end.m);
+            const diff = e - s;
+            return [
+              `Convert to minutes:`,
+              `start = ${start.h}x60 + ${start.m} = ${s}`,
+              `end = ${end.h}x60 + ${end.m} = ${e}`,
+              `difference = ${e} - ${s} = ${diff} minutes`
+            ].join("\n");
+          }
+        };
+      } else {
+        const H = Math.floor(elapsed / 60);
+        const M = elapsed - H*60;
+        return {
+          mode,
+          type: "elapsed_hm",
+          fields: 2,
+          prompt: `${base} How long was it? Answer in hours and minutes.`,
+          startH: start.h, startM: start.m, endH: end.h, endM: end.m,
+          answer: { hours: H, minutes: M },
+          steps: () => {
+            const s = timeToMinutes(start.h, start.m);
+            const e = timeToMinutes(end.h, end.m);
+            const diff = e - s;
+            const hh = Math.floor(diff/60);
+            const mm = diff - hh*60;
+            return [
+              `Convert to minutes:`,
+              `start = ${start.h}x60 + ${start.m} = ${s}`,
+              `end = ${end.h}x60 + ${end.m} = ${e}`,
+              `difference = ${e} - ${s} = ${diff} minutes`,
+              `convert back: ${diff} = ${hh} h ${mm} min`
+            ].join("\n");
+          }
+        };
+      }
+    }
+
+    // ADVANCED
+    // Some questions include day differences up to 3 days.
+    // For the remaining (non-day) questions: minutes-only about 30%, rest hours+minutes.
+    const allowDays = true;
+    const dayQuestionChance = 0.22; // "sometimes" + you said you like it
+    const minutesOnlyTarget = (opts && typeof opts.minutesOnlyTarget === "number") ? opts.minutesOnlyTarget : 0.30;
+    const forceType = opts && opts.forceType ? opts.forceType : null; // "day" | "minutes" | "hm" | null
+
+    const start = genStartTime("advanced", rng);
+
+    const doDay = (forceType === "day") ? true :
+                  (forceType ? false :
+                   (allowDays && rng() < dayQuestionChance));
+
+    if (doDay){
+      // duration = 1..3 days plus 0..23 hours plus 0..59 minutes, not all zero
+      let d = randInt(rng, 1, 3);
+      let h = randInt(rng, 0, 23);
+      let m = anyMinute(rng);
+
+      // keep it not too tiny (avoid "1 day 0 h 0 min" too often)
+      if (h === 0 && m === 0 && rng() < 0.6) m = 15;
+
+      const total = d*1440 + h*60 + m;
+      const end = minutesToTime(timeToMinutes(start.h, start.m) + (total % 1440));
+      const endDayOffset = d + Math.floor((timeToMinutes(start.h,start.m) + (h*60+m)) / 1440);
+
+      const base = (rng() < 0.5)
+        ? `${who} started ${ctx} at ${fmtClock(start.h,start.m)} and finished ${endDayOffset} day${endDayOffset===1?"":"s"} later at ${fmtClock(end.h,end.m)}.`
+        : `Start: ${fmtClock(start.h,start.m)}. End: ${endDayOffset} day${endDayOffset===1?"":"s"} later at ${fmtClock(end.h,end.m)}.`;
+
+      return {
+        mode,
+        type: "elapsed_dhm",
+        fields: 3,
+        prompt: `${base} How long was it? Answer in days, hours, and minutes.`,
+        startH: start.h, startM: start.m, endH: end.h, endM: end.m, dayOffset: endDayOffset,
+        answer: { days: d, hours: h, minutes: m },
+        steps: () => {
+          const startMin = timeToMinutes(start.h, start.m);
+          const endMinSameDay = timeToMinutes(end.h, end.m);
+          const endTotal = endDayOffset*1440 + endMinSameDay;
+          const diff = endTotal - startMin;
+          const dd = Math.floor(diff/1440);
+          const rem = diff - dd*1440;
+          const hh = Math.floor(rem/60);
+          const mm = rem - hh*60;
+          return [
+            `Treat the end time as a later day:`,
+            `start (minutes) = ${start.h}x60 + ${start.m} = ${startMin}`,
+            `end (same-day minutes) = ${end.h}x60 + ${end.m} = ${endMinSameDay}`,
+            `end total minutes = ${endDayOffset}x1440 + ${endMinSameDay} = ${endTotal}`,
+            `difference = ${endTotal} - ${startMin} = ${diff} minutes`,
+            `convert: ${diff} = ${dd} day(s), ${hh} h, ${mm} min`
+          ].join("\n");
+        }
+      };
+    }
+
+    // Non-day advanced question (possibly cross midnight)
+    // Decide minutes-only vs hours+minutes with ~30% minutes-only
+    const wantMinutesOnly = (forceType === "minutes") ? true :
+                            (forceType === "hm") ? false :
+                            (rng() < minutesOnlyTarget);
+
+    // Choose duration (0..10 hours + 0..59 minutes, not all zero)
+    let hDur = randInt(rng, 0, 10);
+    let mDur = anyMinute(rng);
+    if (hDur === 0 && mDur === 0) mDur = 17;
+
+    const elapsed = hDur*60 + mDur;
+    const end = minutesToTime(timeToMinutes(start.h, start.m) + elapsed);
+
+    const base = (rng() < 0.5)
+      ? `${who} had ${ctx} from ${fmtClock(start.h,start.m)} to ${fmtClock(end.h,end.m)}.`
+      : `Between ${fmtClock(start.h,start.m)} and ${fmtClock(end.h,end.m)}:`;
+
+    if (wantMinutesOnly){
+      return {
+        mode,
+        type: "elapsed_minutes",
+        fields: 1,
+        prompt: `${base} How long was it? Answer in minutes.`,
+        startH: start.h, startM: start.m, endH: end.h, endM: end.m,
+        answer: { minutesOnly: elapsed },
+        steps: () => {
+          const s = timeToMinutes(start.h, start.m);
+          const e = timeToMinutes(end.h, end.m);
+          const crosses = (e < s);
+          const e2 = crosses ? e + 1440 : e;
+          const diff = e2 - s;
+          return [
+            `Convert to minutes:`,
+            `start = ${start.h}x60 + ${start.m} = ${s}`,
+            `end = ${end.h}x60 + ${end.m} = ${e}` + (crosses ? ` (next day, add 1440)` : ``),
+            crosses ? `adjusted end = ${e} + 1440 = ${e2}` : `adjusted end = ${e2}`,
+            `difference = ${e2} - ${s} = ${diff} minutes`
+          ].join("\n");
+        }
+      };
+    } else {
+      const H = Math.floor(elapsed/60);
+      const M = elapsed - H*60;
+      return {
+        mode,
+        type: "elapsed_hm",
+        fields: 2,
+        prompt: `${base} How long was it? Answer in hours and minutes.`,
+        startH: start.h, startM: start.m, endH: end.h, endM: end.m,
+        answer: { hours: H, minutes: M },
+        steps: () => {
+          const s = timeToMinutes(start.h, start.m);
+          const e = timeToMinutes(end.h, end.m);
+          const crosses = (e < s);
+          const e2 = crosses ? e + 1440 : e;
+          const diff = e2 - s;
+          const hh = Math.floor(diff/60);
+          const mm = diff - hh*60;
+          return [
+            `Convert to minutes:`,
+            `start = ${start.h}x60 + ${start.m} = ${s}`,
+            `end = ${end.h}x60 + ${end.m} = ${e}` + (crosses ? ` (next day, add 1440)` : ``),
+            crosses ? `adjusted end = ${e} + 1440 = ${e2}` : `adjusted end = ${e2}`,
+            `difference = ${e2} - ${s} = ${diff} minutes`,
+            `convert back: ${diff} = ${hh} h ${mm} min`
+          ].join("\n");
+        }
+      };
+    }
+  }
+
+  function makeUniqueQuestion(mode, opts){
+    const seen = new Set(state.history);
+    let q = null;
+    for (let i = 0; i < 600; i++){
+      q = makeQuestion(mode, opts);
+      const sig = signature(q);
+      if (!seen.has(sig)){
+        state.history.push(sig);
+        if (state.history.length > state.historyMax) state.history.shift();
+        return q;
+      }
+    }
+    // fallback
+    state.history = [];
+    q = makeQuestion(mode, opts);
+    state.history.push(signature(q));
+    return q;
+  }
+
+  /* ---------- fields ---------- */
+  function clearFields(){
+    const inputs = ui.timeFields.querySelectorAll("input");
+    inputs.forEach(i => i.value = "");
+    const first = ui.timeFields.querySelector("input");
+    if (first) first.focus();
+  }
+
+  function buildFields(q){
+    ui.timeFields.innerHTML = "";
+
+    const makeField = (id, labelText, placeholder, wide=false) => {
+      const wrap = document.createElement("div");
+      wrap.className = "field" + (wide ? " wide" : "");
+      const lab = document.createElement("label");
+      lab.setAttribute("for", id);
+      lab.textContent = labelText;
+      const inp = document.createElement("input");
+      inp.id = id;
+      inp.autocomplete = "off";
+      inp.placeholder = placeholder || "";
+      inp.setAttribute("aria-label", labelText);
+      inp.inputMode = "numeric";
+      wrap.appendChild(lab);
+      wrap.appendChild(inp);
+      return wrap;
+    };
+
+    if (q.fields === 1){
+      ui.timeFields.appendChild(makeField("fOne", "Minutes", "e.g. 125", true));
+    } else if (q.fields === 2){
+      ui.timeFields.appendChild(makeField("fH", "Hours", "hh"));
+      const c = document.createElement("div");
+      c.className = "colon";
+      c.textContent = ":";
+      ui.timeFields.appendChild(c);
+      ui.timeFields.appendChild(makeField("fM", "Minutes", "mm"));
+    } else {
+      // 3 fields: days, hours, minutes
+      ui.timeFields.appendChild(makeField("fD", "Days", "d"));
+      const c1 = document.createElement("div");
+      c1.className = "colon";
+      c1.textContent = ":";
+      ui.timeFields.appendChild(c1);
+      ui.timeFields.appendChild(makeField("fH", "Hours", "hh"));
+      const c2 = document.createElement("div");
+      c2.className = "colon";
+      c2.textContent = ":";
+      ui.timeFields.appendChild(c2);
+      ui.timeFields.appendChild(makeField("fM", "Minutes", "mm"));
+    }
+
+    const inputs = ui.timeFields.querySelectorAll("input");
+    inputs.forEach(inp => {
+      inp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter"){
+          e.preventDefault();
+          if (state.awaitingNext) nextQuestion();
+          else submitAnswer();
+        }
+        if (e.key === "Escape"){
+          e.preventDefault();
+          clearFields();
+        }
+      });
+    });
+  }
+
+  function setFeedback(show, good, bigText, smallText, stepsText){
+    ui.feedback.style.display = show ? "flex" : "none";
+    if (!show) return;
+    ui.fbBig.className = "fbBig " + (good ? "good" : "bad");
+    ui.fbBig.textContent = bigText || "";
+    ui.fbSmall.textContent = smallText || "";
+    ui.stepsBox.textContent = stepsText || "";
+    ui.stepsBox.classList.remove("show");
+    ui.btnShowSteps.style.display = good ? "none" : "inline-block";
+  }
+
+  /* ---------- timer ---------- */
+  function stopTimer(){
+    if (state.timerId){ clearInterval(state.timerId); state.timerId = null; }
+    state.timeLeft = 0;
+    updateTimerStat();
+  }
+  function startTimerIfNeeded(){
+    stopTimer();
+    if (ui.timerOn.value !== "on") return;
+    state.timeLeft = parseInt(ui.timerLen.value, 10) || 60;
+    updateTimerStat();
+    state.timerId = setInterval(() => {
+      state.timeLeft--;
+      updateTimerStat();
+      if (state.timeLeft <= 0){
+        stopTimer();
+        timeUp();
+      }
+    }, 1000);
+  }
+  function updateTimerStat(){
+    if (ui.timerOn.value !== "on") ui.stTimer.textContent = "Off";
+    else ui.stTimer.textContent = state.timeLeft > 0 ? `${state.timeLeft}s` : `${parseInt(ui.timerLen.value,10)}s`;
+  }
+  function timeUp(){
+    if (!state.current || state.awaitingNext) return;
+    const corr = correctDisplay(state.current);
+    recordAttempt(false, "(time up)", corr.display);
+    setFeedback(true, false, "Time's up", `Correct answer: ${corr.display}`, state.current.steps());
+    beep("bad");
+    state.awaitingNext = true;
+    ui.btnNext.classList.remove("ghost");
+    ui.btnNext.classList.add("primary");
+  }
+
+  /* ---------- stats ---------- */
+  function updateStats(){
+    ui.stTotal.textContent = String(state.total);
+    ui.stCorrect.textContent = String(state.correct);
+    const acc = state.total ? Math.round((state.correct / state.total) * 100) : 0;
+    ui.stAcc.textContent = `${acc}%`;
+    ui.stScore.textContent = String(state.score);
+    ui.stStreak.textContent = String(state.streak);
+    ui.sumLine.textContent =
+      `Total: ${state.total} | Correct: ${state.correct} | Accuracy: ${acc}% | Score: ${state.score} | Streak: ${state.streak}`;
+    renderIncorrect();
+  }
+
+  function renderIncorrect(){
+    ui.incorrectList.innerHTML = "";
+    if (!state.incorrect.length){
+      const p = document.createElement("div");
+      p.className = "smallNote";
+      p.textContent = "No incorrect answers yet.";
+      ui.incorrectList.appendChild(p);
+      return;
+    }
+    state.incorrect.slice(-25).reverse().forEach(item => {
+      const box = document.createElement("div");
+      box.className = "incItem";
+      const q = document.createElement("div");
+      q.className = "incQ";
+      q.textContent = item.q;
+      const a = document.createElement("div");
+      a.className = "incA";
+      a.textContent = `Your answer: ${item.your}\nCorrect: ${item.correct}`;
+      box.appendChild(q);
+      box.appendChild(a);
+      ui.incorrectList.appendChild(box);
+    });
+  }
+
+  function recordAttempt(isCorrect, yourText, correctText){
+    state.total++;
+    if (isCorrect){
+      state.correct++;
+      state.streak++;
+      state.score += 10;
+      if (state.streak > 0 && state.streak % 5 === 0) state.score += 5;
+    } else {
+      state.streak = 0;
+      state.incorrect.push({ q: state.current ? state.current.prompt : "Question", your: yourText, correct: correctText });
+    }
+    updateStats();
+  }
+
+  /* ---------- answer checking ---------- */
+  function correctDisplay(q){
+    if (q.fields === 1) return { display: `${q.answer.minutesOnly} minutes` };
+    if (q.fields === 2) return { display: fmtDurationHM(q.answer.hours, q.answer.minutes) };
+    return { display: fmtDurationDHM(q.answer.days, q.answer.hours, q.answer.minutes) };
+  }
+
+  function readUserAnswer(q){
+    const getRaw = (id) => {
+      const el = document.getElementById(id);
+      return el ? el.value : "";
+    };
+
+    if (q.fields === 1){
+      const v = parseIntSafe(getRaw("fOne"));
+      if (v === null) return { ok:false, msg:"Enter a whole number of minutes." };
+      if (v < 0) return { ok:false, msg:"Minutes cannot be negative." };
+      return { ok:true, data:{ minutesOnly:v }, text:`${v}` };
+    }
+
+    if (q.fields === 2){
+      const h = parseIntSafe(getRaw("fH"));
+      const m = parseIntSafe(getRaw("fM"));
+      if (h === null || m === null) return { ok:false, msg:"Fill in both fields." };
+      if (h < 0) return { ok:false, msg:"Hours cannot be negative." };
+      if (m < 0 || m > 59) return { ok:false, msg:"Minutes must be between 0 and 59." };
+      return { ok:true, data:{ hours:h, minutes:m }, text: fmtDurationHM(h,m) };
+    }
+
+    const d = parseIntSafe(getRaw("fD"));
+    const h = parseIntSafe(getRaw("fH"));
+    const m = parseIntSafe(getRaw("fM"));
+    if (d === null || h === null || m === null) return { ok:false, msg:"Fill in all three fields." };
+    if (d < 0) return { ok:false, msg:"Days cannot be negative." };
+    if (h < 0 || h > 23) return { ok:false, msg:"Hours must be between 0 and 23." };
+    if (m < 0 || m > 59) return { ok:false, msg:"Minutes must be between 0 and 59." };
+    return { ok:true, data:{ days:d, hours:h, minutes:m }, text: fmtDurationDHM(d,h,m) };
+  }
+
+  function isCorrect(q, user){
+    if (!user || !user.ok) return false;
+    const u = user.data;
+    if (q.fields === 1) return u.minutesOnly === q.answer.minutesOnly;
+    if (q.fields === 2) return u.hours === q.answer.hours && u.minutes === q.answer.minutes;
+    return u.days === q.answer.days && u.hours === q.answer.hours && u.minutes === q.answer.minutes;
+  }
+
+  /* ---------- game flow ---------- */
+  function setModeChip(mode){
+    ui.modeChip.textContent = (mode === "advanced") ? "Advanced" : "Regular";
+  }
+
+  function nextQuestion(){
+    state.awaitingNext = false;
+    ui.btnNext.classList.remove("primary");
+    ui.btnNext.classList.add("ghost");
+
+    const mode = chosenMode();
+    setModeChip(mode);
+
+    state.current = makeUniqueQuestion(mode, null);
+
+    ui.qText.textContent = state.current.prompt;
+    ui.qNote.textContent = "";
+
+    setFeedback(false);
+    buildFields(state.current);
+    clearFields();
+    startTimerIfNeeded();
+  }
+
+  function submitAnswer(){
+    if (!state.current) return;
+    if (state.awaitingNext) return;
+
+    const q = state.current;
+    const user = readUserAnswer(q);
+    if (!user.ok){
+      setFeedback(true, false, "Check your input", user.msg, "");
+      beep("bad");
+      return;
+    }
+
+    stopTimer();
+
+    const ok = isCorrect(q, user);
+    const corr = correctDisplay(q);
+
+    if (ok){
+      recordAttempt(true, user.text, corr.display);
+      setFeedback(true, true, "Correct!", "Press Enter or click Next to continue.", "");
+      beep("good");
+      state.awaitingNext = true;
+      ui.btnNext.classList.remove("ghost");
+      ui.btnNext.classList.add("primary");
+    } else {
+      recordAttempt(false, user.text, corr.display);
+      setFeedback(true, false, "Incorrect", `Correct answer: ${corr.display}`, q.steps());
+      beep("bad");
+      state.awaitingNext = false;
+      ui.btnNext.classList.remove("primary");
+      ui.btnNext.classList.add("ghost");
+    }
+  }
+
+  /* ---------- worksheet ---------- */
+  function setWsError(msg){
+    if (!msg){ ui.wsError.style.display = "none"; ui.wsError.textContent = ""; return; }
+    ui.wsError.style.display = "block";
+    ui.wsError.textContent = msg;
+  }
+
+  function buildWorksheetItem(idx, q){
+    const box = document.createElement("div");
+    box.className = "wsItem";
+
+    const qDiv = document.createElement("div");
+    qDiv.className = "wsQ";
+    qDiv.textContent = `${idx}. ${q.prompt}`;
+
+    const btnRow = document.createElement("div");
+    btnRow.className = "btnRow";
+    btnRow.style.marginTop = "8px";
+
+    const btn = document.createElement("button");
+    btn.className = "ghost";
+    btn.type = "button";
+    btn.textContent = "Reveal";
+    btn.addEventListener("click", () => {
+      box.classList.toggle("revealed");
+      btn.textContent = box.classList.contains("revealed") ? "Hide" : "Reveal";
+    });
+    btnRow.appendChild(btn);
+
+    const ans = document.createElement("div");
+    ans.className = "wsAns";
+    const c = correctDisplay(q);
+    ans.textContent = `Answer: ${c.display}\nSteps:\n${q.steps()}`;
+
+    box.appendChild(qDiv);
+    box.appendChild(btnRow);
+    box.appendChild(ans);
+
+    return box;
+  }
+
+  // Worksheet generation: enforce advanced minutes-only ~30% (not 95%).
+  function generateWorksheet(){
+    setWsError("");
+    ui.wsList.innerHTML = "";
+
+    try{
+      const count = parseInt(ui.wsCount.value, 10) || 10;
+      const wsMode = chosenMode();
+
+      const localSeen = new Set();
+      const qs = [];
+
+      if (wsMode === "regular"){
+        let guard = 0;
+        while (qs.length < count && guard < 6000){
+          guard++;
+          const q = makeQuestion("regular", null);
+          const sig = signature(q);
+          if (localSeen.has(sig)) continue;
+          localSeen.add(sig);
+          qs.push(q);
+        }
+      } else {
+        // Advanced: control distribution.
+        // We aim (roughly) for:
+        // - day questions: around 20%
+        // - minutes-only among the remaining: around 30%
+        const dayTarget = Math.round(count * 0.20);
+        const nonDay = count - dayTarget;
+        const minTarget = Math.round(nonDay * 0.30);
+        const hmTarget = nonDay - minTarget;
+
+        let needDay = dayTarget, needMin = minTarget, needHm = hmTarget;
+        let guard = 0;
+
+        while (qs.length < count && guard < 12000){
+          guard++;
+
+          let forceType = null;
+          // Choose what to generate next based on remaining needs
+          if (needDay > 0) forceType = "day";
+          else if (needMin > 0 && needHm > 0) forceType = (Math.random() < 0.5) ? "minutes" : "hm";
+          else if (needMin > 0) forceType = "minutes";
+          else if (needHm > 0) forceType = "hm";
+
+          const q = makeQuestion("advanced", { forceType, minutesOnlyTarget: 0.30 });
+          const sig = signature(q);
+          if (localSeen.has(sig)) continue;
+
+          // Confirm it matches what we needed
+          if (q.fields === 3){
+            if (needDay <= 0) continue;
+            needDay--;
+          } else if (q.fields === 1){
+            if (needMin <= 0) continue;
+            needMin--;
+          } else {
+            if (needHm <= 0) continue;
+            needHm--;
+          }
+
+          localSeen.add(sig);
+          qs.push(q);
+        }
+      }
+
+      ui.wsHeader.textContent = `Instruction: Find the elapsed time between the two times. Mode: ${wsMode === "advanced" ? "Advanced" : "Regular"}. (Each question tells you how to answer.)`;
+
+      if (qs.length !== count){
+        setWsError("Worksheet generated fewer unique questions than requested. Click Generate again.");
+      }
+
+      qs.forEach((q, i) => ui.wsList.appendChild(buildWorksheetItem(i+1, q)));
+    } catch (err){
+      setWsError("Worksheet failed to generate. If you open this page with ?dev=1, the error will be shown.");
+      if (DEV){
+        ui.devPanel.style.display = "block";
+        ui.devPanel.textContent = "Worksheet generation error:\n" + (err && err.stack ? err.stack : String(err));
+      }
+    }
+  }
+
+  function worksheetRevealAll(on){
+    const items = ui.wsList.querySelectorAll(".wsItem");
+    items.forEach(item => item.classList.toggle("revealed", on));
+    const btns = ui.wsList.querySelectorAll(".wsItem .btnRow button");
+    btns.forEach(btn => btn.textContent = on ? "Hide" : "Reveal");
+  }
+
+  /* ---------- tabs ---------- */
+  function setTab(which){
+    const isGame = which === "game";
+    ui.tabGame.classList.toggle("active", isGame);
+    ui.tabWs.classList.toggle("active", !isGame);
+    ui.tabGame.setAttribute("aria-selected", String(isGame));
+    ui.tabWs.setAttribute("aria-selected", String(!isGame));
+    ui.gameView.style.display = isGame ? "block" : "none";
+    ui.wsView.style.display = isGame ? "none" : "block";
+    if (!isGame) stopTimer();
+  }
+
+  /* ---------- dev tests ---------- */
+  function assert(cond, msg){ if (!cond) throw new Error(msg); }
+  function runDevTests(){
+    const lines = [];
+    const log = (s) => lines.push(s);
+
+    // Regular: if fields=1 then elapsed < 60; if elapsed >=60 then fields=2
+    for (let i=0;i<400;i++){
+      const q = makeQuestion("regular", null);
+      if (q.fields === 1){
+        assert(q.answer.minutesOnly < 60, "Regular produced minutes-only >= 60");
+        assert(q.prompt.includes("Answer in minutes"), "Regular minutes question missing instruction");
+      } else {
+        const total = q.answer.hours*60 + q.answer.minutes;
+        assert(total >= 60, "Regular produced HM < 60");
+        assert(q.prompt.includes("Answer in hours and minutes"), "Regular HM missing instruction");
+      }
+      assert(!q.steps().includes("next day"), "Regular indicated next day");
+    }
+    log("PASS 1: Regular format rule enforced, no midnight crossing.");
+
+    // Advanced: day questions have 3 fields + instruction
+    let sawDay = false;
+    for (let i=0;i<600;i++){
+      const q = makeQuestion("advanced", null);
+      if (q.fields === 3){
+        sawDay = true;
+        assert(q.prompt.includes("days, hours, and minutes"), "Day question missing instruction");
+        assert(q.answer.days >= 1 && q.answer.days <= 3, "Day out of range");
+        break;
+      }
+    }
+    assert(sawDay, "Did not observe a day question in sample");
+    log("PASS 2: Advanced day questions exist with correct instructions and range.");
+
+    // Worksheet advanced distribution check (rough)
+    const sampleCount = 50;
+    let day=0, min=0, hm=0;
+    for (let i=0;i<sampleCount;i++){
+      const q = makeQuestion("advanced", null);
+      if (q.fields === 3) day++;
+      else if (q.fields === 1) min++;
+      else hm++;
+    }
+    log(`INFO: Advanced sample mix (not enforced in game): day=${day}, minutes=${min}, hm=${hm}`);
+
+    ui.devPanel.style.display = "block";
+    ui.devPanel.textContent =
+      "Developer tests (?dev=1)\n" + lines.map(s => "- " + s).join("\n");
+  }
+
+  /* ---------- wiring ---------- */
+  ui.btnSubmit.addEventListener("click", submitAnswer);
+  ui.btnNext.addEventListener("click", nextQuestion);
+  ui.btnClear.addEventListener("click", clearFields);
+
+  ui.btnShowSteps.addEventListener("click", () => ui.stepsBox.classList.toggle("show"));
+
+  ui.tabGame.addEventListener("click", () => setTab("game"));
+  ui.tabWs.addEventListener("click", () => setTab("ws"));
+
+  ui.btnGenWs.addEventListener("click", generateWorksheet);
+  ui.btnRevealAll.addEventListener("click", () => worksheetRevealAll(true));
+  ui.btnHideAll.addEventListener("click", () => worksheetRevealAll(false));
+
+  ui.hcOn.addEventListener("change", () => setHighContrast(ui.hcOn.value === "on"));
+  ui.timerOn.addEventListener("change", () => {
+    if (ui.timerOn.value !== "on") stopTimer();
+    else startTimerIfNeeded();
+    updateTimerStat();
+  });
+  ui.timerLen.addEventListener("change", () => {
+    if (ui.timerOn.value === "on") startTimerIfNeeded();
+    updateTimerStat();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const tag = (document.activeElement && document.activeElement.tagName) ? document.activeElement.tagName.toLowerCase() : "";
+    if (tag === "select") return;
+
+    if (e.key === "Escape"){
+      e.preventDefault();
+      clearFields();
+      return;
+    }
+    if (e.key === "Enter"){
+      const activeTag = (document.activeElement && document.activeElement.tagName) ? document.activeElement.tagName.toLowerCase() : "";
+      if (activeTag !== "input"){
+        e.preventDefault();
+        if (state.awaitingNext) nextQuestion();
+        else submitAnswer();
+      }
+    }
+  });
+
+  /* ---------- init ---------- */
+  setHighContrast(false);
+  updateStats();
+  updateTimerStat();
+  nextQuestion();
+  if (DEV) runDevTests();
+
+})();
+</script>
+</body>
+</html>
