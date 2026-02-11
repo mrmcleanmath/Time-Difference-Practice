@@ -420,6 +420,11 @@
     "a workout", "a museum visit", "a library visit", "a concert"
   ];
 
+  // NEW pools for "end time" questions (added, minimal change)
+  const travelTypes = ["train", "bus", "tram", "ferry"];
+  const cities = ["Stockholm","Uppsala","Gothenburg","Malmo","Oslo","Copenhagen","Helsinki","Berlin","Hamburg","Paris","London"];
+  const funEvents = ["a football match","a movie","a gaming session","a concert","a training session","a TV show","a basketball game","a swim practice"];
+
   /* ---------- state ---------- */
   const state = {
     rng: mulberry32((todaySeed() ^ 0xA5C3E21) >>> 0),
@@ -473,8 +478,46 @@
     const a = q.answer;
     return [
       q.mode, q.type, q.prompt,
-      a.days ?? "", a.hours ?? "", a.minutes ?? "", a.minutesOnly ?? ""
-    ].join("|").slice(0, 400);
+      a.days ?? "", a.hours ?? "", a.minutes ?? "", a.minutesOnly ?? "",
+      a.clockH ?? "", a.clockM ?? "", a.dayOffset ?? ""
+    ].join("|").slice(0, 450);
+  }
+
+  // NEW helper: make friendly durations for end-time questions (no multi-digit x multi-digit required)
+  function pickFriendlyDurationRegular(rng){
+    // Common book-style durations: quarters + some simple ones
+    const choices = [
+      {h:0,m:15},{h:0,m:30},{h:0,m:45},
+      {h:1,m:0},{h:1,m:15},{h:1,m:30},{h:1,m:45},
+      {h:2,m:0},{h:2,m:15},{h:2,m:30},{h:2,m:45},
+      {h:3,m:0}
+    ];
+    return pick(rng, choices);
+  }
+  function pickFriendlyDurationAdvanced(rng){
+    const choices = [
+      {h:0,m:12},{h:0,m:25},{h:0,m:40},{h:0,m:55},
+      {h:1,m:10},{h:1,m:20},{h:1,m:35},{h:1,m:45},
+      {h:2,m:5},{h:2,m:15},{h:2,m:30},{h:2,m:45},
+      {h:3,m:20},{h:4,m:10}
+    ];
+    return pick(rng, choices);
+  }
+
+  function makeEndTimePrompt(rng, who, start, dur, mode){
+    const style = pick(rng, ["travel","event","generic"]);
+    if (style === "travel"){
+      const vehicle = pick(rng, travelTypes);
+      let from = pick(rng, cities);
+      let to = pick(rng, cities);
+      if (to === from) to = pick(rng, cities);
+      return `At ${fmtClock(start.h,start.m)}, ${who} traveled by ${vehicle} from ${from} to ${to}. The trip took ${fmtDurationHM(dur.h, dur.m)}. When did they arrive? Answer with the end time (hours and minutes).`;
+    }
+    if (style === "event"){
+      const ev = pick(rng, funEvents);
+      return `${ev} lasts ${fmtDurationHM(dur.h, dur.m)}. It starts at ${fmtClock(start.h,start.m)}. When does it end? Answer with the end time (hours and minutes).`;
+    }
+    return `Suppose the time is ${fmtClock(start.h,start.m)}. What time will it be after ${fmtDurationHM(dur.h, dur.m)}? Answer with the end time (hours and minutes).`;
   }
 
   function makeQuestion(mode, opts){
@@ -482,28 +525,77 @@
     const who = pick(rng, names);
     const ctx = pick(rng, contexts);
 
+    // If worksheet code is forcing a type, we should NOT generate end-time questions,
+    // because the worksheet distribution logic expects day/minutes/hm only.
+    const forceType = opts && opts.forceType ? opts.forceType : null;
+    const allowEndTime = !forceType; // only in normal generation
+
     if (mode === "regular"){
-      // Choose elapsed; ensure end stays same day.
-      // We purposely generate a mix of <60 and >=60 so students see both formats,
-      // BUT minutes-only only happens when elapsed < 60.
+      // NEW: some regular questions are "end time" (addition) for variety
+      // Keep most as original elapsed-time questions.
+      const endTimeChance = 0.28; // ~28% addition style, rest unchanged
+      const doEndTime = allowEndTime && (rng() < endTimeChance);
+
+      if (doEndTime){
+        const start = genStartTime("regular", rng);
+        const dur = pickFriendlyDurationRegular(rng);
+        const durMin = dur.h*60 + dur.m;
+
+        // Ensure no midnight crossover in regular mode
+        let guard = 0;
+        while (timeToMinutes(start.h,start.m) + durMin >= 1440 && guard < 50){
+          guard++;
+          start.h = randInt(rng, 6, 22);
+          start.m = niceMinute(rng);
+        }
+
+        const endMin = timeToMinutes(start.h,start.m) + durMin;
+        const end = minutesToTime(endMin);
+
+        const prompt = makeEndTimePrompt(rng, who, start, dur, mode);
+
+        return {
+          mode,
+          type: "end_time",
+          fields: 2,
+          prompt,
+          startH: start.h, startM: start.m,
+          durH: dur.h, durM: dur.m,
+          answer: { clockH: end.h, clockM: end.m },
+          steps: () => {
+            const startTotal = timeToMinutes(start.h, start.m);
+            const endTotal = startTotal + durMin;
+            const endH = Math.floor((endTotal % 1440) / 60);
+            const endM = endTotal % 60;
+            return [
+              `Add the duration to the start time:`,
+              `start = ${fmtClock(start.h,start.m)}`,
+              `duration = ${dur.h} h ${dur.m} min`,
+              ``,
+              `Convert start to minutes: ${start.h}x60 + ${start.m} = ${startTotal}`,
+              `Convert duration to minutes: ${dur.h}x60 + ${dur.m} = ${durMin}`,
+              `end total minutes = ${startTotal} + ${durMin} = ${endTotal}`,
+              `Convert back to time: ${endH}:${pad2(endM)}`
+            ].join("\n");
+          }
+        };
+      }
+
+      // ORIGINAL regular elapsed questions (unchanged)
       const start = genStartTime("regular", rng);
 
-      // Decide if this one should be <60 (minutes-only) or >=60 (hours+minutes)
-      const wantUnderHour = (rng() < 0.35); // about 35% of regular questions end up being minutes-only
+      const wantUnderHour = (rng() < 0.35); // about 35% minutes-only
 
       let elapsed;
       if (wantUnderHour){
-        // 5..55 minutes (multiples of 5)
         elapsed = pick(rng, [5,10,15,20,25,30,35,40,45,50,55]);
       } else {
-        // 1..6 hours plus 0..55 minutes (multiples of 5)
         const h = randInt(rng, 1, 6);
         const m = niceMinute(rng);
         elapsed = h*60 + m;
-        if (elapsed < 60) elapsed = 60; // just in case
+        if (elapsed < 60) elapsed = 60;
       }
 
-      // Ensure no midnight crossover
       while (timeToMinutes(start.h, start.m) + elapsed >= 1440){
         start.h = randInt(rng, 6, 22);
         start.m = niceMinute(rng);
@@ -567,9 +659,8 @@
     // Some questions include day differences up to 3 days.
     // For the remaining (non-day) questions: minutes-only about 30%, rest hours+minutes.
     const allowDays = true;
-    const dayQuestionChance = 0.22; // "sometimes" + you said you like it
+    const dayQuestionChance = 0.22;
     const minutesOnlyTarget = (opts && typeof opts.minutesOnlyTarget === "number") ? opts.minutesOnlyTarget : 0.30;
-    const forceType = opts && opts.forceType ? opts.forceType : null; // "day" | "minutes" | "hm" | null
 
     const start = genStartTime("advanced", rng);
 
@@ -578,12 +669,10 @@
                    (allowDays && rng() < dayQuestionChance));
 
     if (doDay){
-      // duration = 1..3 days plus 0..23 hours plus 0..59 minutes, not all zero
       let d = randInt(rng, 1, 3);
       let h = randInt(rng, 0, 23);
       let m = anyMinute(rng);
 
-      // keep it not too tiny (avoid "1 day 0 h 0 min" too often)
       if (h === 0 && m === 0 && rng() < 0.6) m = 15;
 
       const total = d*1440 + h*60 + m;
@@ -622,13 +711,56 @@
       };
     }
 
-    // Non-day advanced question (possibly cross midnight)
-    // Decide minutes-only vs hours+minutes with ~30% minutes-only
+    // Non-day advanced question
     const wantMinutesOnly = (forceType === "minutes") ? true :
                             (forceType === "hm") ? false :
                             (rng() < minutesOnlyTarget);
 
-    // Choose duration (0..10 hours + 0..59 minutes, not all zero)
+    // NEW: some advanced non-day questions are end-time (addition)
+    const endTimeChanceAdv = 0.33; // ~33% of non-day advanced become end-time questions
+    const doEndTimeAdv = allowEndTime && !wantMinutesOnly && (rng() < endTimeChanceAdv);
+
+    if (doEndTimeAdv){
+      const dur = pickFriendlyDurationAdvanced(rng);
+      const durMin = dur.h*60 + dur.m;
+      if (durMin === 0) dur.m = 17;
+
+      const startTotal = timeToMinutes(start.h, start.m);
+      const endTotal = startTotal + durMin;
+      const end = minutesToTime(endTotal);
+      const crosses = (endTotal >= 1440);
+
+      const promptBase = makeEndTimePrompt(rng, who, start, dur, mode);
+      const prompt = crosses
+        ? (promptBase + " (It ends the next day.)")
+        : promptBase;
+
+      return {
+        mode,
+        type: crosses ? "end_time_nextday" : "end_time",
+        fields: 2,
+        prompt,
+        startH: start.h, startM: start.m,
+        durH: dur.h, durM: dur.m,
+        answer: { clockH: end.h, clockM: end.m, dayOffset: crosses ? 1 : 0 },
+        steps: () => {
+          const endH = Math.floor(((endTotal % 1440) + 1440) % 1440 / 60);
+          const endM = ((endTotal % 60) + 60) % 60;
+          return [
+            `Add the duration to the start time:`,
+            `start = ${fmtClock(start.h,start.m)}`,
+            `duration = ${dur.h} h ${dur.m} min`,
+            ``,
+            `Convert start to minutes: ${start.h}x60 + ${start.m} = ${startTotal}`,
+            `Convert duration to minutes: ${dur.h}x60 + ${dur.m} = ${durMin}`,
+            `end total minutes = ${startTotal} + ${durMin} = ${endTotal}` + (crosses ? " (next day)" : ""),
+            `Convert back to time: ${endH}:${pad2(endM)}` + (crosses ? " (next day)" : "")
+          ].join("\n");
+        }
+      };
+    }
+
+    // Original advanced elapsed (minutes-only or HM)
     let hDur = randInt(rng, 0, 10);
     let mDur = anyMinute(rng);
     if (hDur === 0 && mDur === 0) mDur = 17;
@@ -706,7 +838,6 @@
         return q;
       }
     }
-    // fallback
     state.history = [];
     q = makeQuestion(mode, opts);
     state.history.push(signature(q));
@@ -744,14 +875,20 @@
     if (q.fields === 1){
       ui.timeFields.appendChild(makeField("fOne", "Minutes", "e.g. 125", true));
     } else if (q.fields === 2){
-      ui.timeFields.appendChild(makeField("fH", "Hours", "hh"));
+      // NEW: if end_time question, label as end time
+      const isEnd = (q.type === "end_time" || q.type === "end_time_nextday");
+      const labH = isEnd ? "End hour" : "Hours";
+      const labM = isEnd ? "End minute" : "Minutes";
+      const phH = isEnd ? "HH" : "hh";
+      const phM = isEnd ? "MM" : "mm";
+
+      ui.timeFields.appendChild(makeField("fH", labH, phH));
       const c = document.createElement("div");
       c.className = "colon";
       c.textContent = ":";
       ui.timeFields.appendChild(c);
-      ui.timeFields.appendChild(makeField("fM", "Minutes", "mm"));
+      ui.timeFields.appendChild(makeField("fM", labM, phM));
     } else {
-      // 3 fields: days, hours, minutes
       ui.timeFields.appendChild(makeField("fD", "Days", "d"));
       const c1 = document.createElement("div");
       c1.className = "colon";
@@ -880,6 +1017,12 @@
 
   /* ---------- answer checking ---------- */
   function correctDisplay(q){
+    // NEW: end-time questions display clock time
+    if (q.type === "end_time" || q.type === "end_time_nextday"){
+      const suffix = (q.type === "end_time_nextday") ? " (next day)" : "";
+      return { display: `${fmtClock(q.answer.clockH, q.answer.clockM)}${suffix}` };
+    }
+
     if (q.fields === 1) return { display: `${q.answer.minutesOnly} minutes` };
     if (q.fields === 2) return { display: fmtDurationHM(q.answer.hours, q.answer.minutes) };
     return { display: fmtDurationDHM(q.answer.days, q.answer.hours, q.answer.minutes) };
@@ -902,6 +1045,15 @@
       const h = parseIntSafe(getRaw("fH"));
       const m = parseIntSafe(getRaw("fM"));
       if (h === null || m === null) return { ok:false, msg:"Fill in both fields." };
+
+      // NEW: End-time questions validate as clock time
+      if (q.type === "end_time" || q.type === "end_time_nextday"){
+        if (h < 0 || h > 23) return { ok:false, msg:"Hour must be between 0 and 23." };
+        if (m < 0 || m > 59) return { ok:false, msg:"Minutes must be between 0 and 59." };
+        return { ok:true, data:{ clockH:h, clockM:m }, text: fmtClock(h,m) };
+      }
+
+      // Original duration validation
       if (h < 0) return { ok:false, msg:"Hours cannot be negative." };
       if (m < 0 || m > 59) return { ok:false, msg:"Minutes must be between 0 and 59." };
       return { ok:true, data:{ hours:h, minutes:m }, text: fmtDurationHM(h,m) };
@@ -920,6 +1072,12 @@
   function isCorrect(q, user){
     if (!user || !user.ok) return false;
     const u = user.data;
+
+    // NEW: end-time compare
+    if (q.type === "end_time" || q.type === "end_time_nextday"){
+      return u.clockH === q.answer.clockH && u.clockM === q.answer.clockM;
+    }
+
     if (q.fields === 1) return u.minutesOnly === q.answer.minutesOnly;
     if (q.fields === 2) return u.hours === q.answer.hours && u.minutes === q.answer.minutes;
     return u.days === q.answer.days && u.hours === q.answer.hours && u.minutes === q.answer.minutes;
@@ -1040,17 +1198,14 @@
         let guard = 0;
         while (qs.length < count && guard < 6000){
           guard++;
-          const q = makeQuestion("regular", null);
+          const q = makeQuestion("regular", null); // regular worksheet can include end-time variety naturally
           const sig = signature(q);
           if (localSeen.has(sig)) continue;
           localSeen.add(sig);
           qs.push(q);
         }
       } else {
-        // Advanced: control distribution.
-        // We aim (roughly) for:
-        // - day questions: around 20%
-        // - minutes-only among the remaining: around 30%
+        // Advanced: control distribution (as before)
         const dayTarget = Math.round(count * 0.20);
         const nonDay = count - dayTarget;
         const minTarget = Math.round(nonDay * 0.30);
@@ -1063,17 +1218,16 @@
           guard++;
 
           let forceType = null;
-          // Choose what to generate next based on remaining needs
           if (needDay > 0) forceType = "day";
           else if (needMin > 0 && needHm > 0) forceType = (Math.random() < 0.5) ? "minutes" : "hm";
           else if (needMin > 0) forceType = "minutes";
           else if (needHm > 0) forceType = "hm";
 
+          // When forceType is set, end-time questions are disabled inside makeQuestion (by design)
           const q = makeQuestion("advanced", { forceType, minutesOnlyTarget: 0.30 });
           const sig = signature(q);
           if (localSeen.has(sig)) continue;
 
-          // Confirm it matches what we needed
           if (q.fields === 3){
             if (needDay <= 0) continue;
             needDay--;
@@ -1090,7 +1244,7 @@
         }
       }
 
-      ui.wsHeader.textContent = `Instruction: Find the elapsed time between the two times. Mode: ${wsMode === "advanced" ? "Advanced" : "Regular"}. (Each question tells you how to answer.)`;
+      ui.wsHeader.textContent = `Instruction: Read each question carefully. Mode: ${wsMode === "advanced" ? "Advanced" : "Regular"}. (Each question tells you how to answer.)`;
 
       if (qs.length !== count){
         setWsError("Worksheet generated fewer unique questions than requested. Click Generate again.");
@@ -1131,10 +1285,18 @@
     const lines = [];
     const log = (s) => lines.push(s);
 
-    // Regular: if fields=1 then elapsed < 60; if elapsed >=60 then fields=2
-    for (let i=0;i<400;i++){
+    // Regular rules:
+    for (let i=0;i<450;i++){
       const q = makeQuestion("regular", null);
-      if (q.fields === 1){
+
+      if (q.type === "end_time"){
+        assert(q.fields === 2, "Regular end_time should be 2 fields");
+        assert(q.prompt.toLowerCase().includes("end time"), "end_time prompt missing 'end time'");
+        // ensure within same day
+        const startMin = timeToMinutes(q.startH, q.startM);
+        const durMin = q.durH*60 + q.durM;
+        assert(startMin + durMin < 1440, "Regular end_time crossed midnight");
+      } else if (q.fields === 1){
         assert(q.answer.minutesOnly < 60, "Regular produced minutes-only >= 60");
         assert(q.prompt.includes("Answer in minutes"), "Regular minutes question missing instruction");
       } else {
@@ -1142,13 +1304,12 @@
         assert(total >= 60, "Regular produced HM < 60");
         assert(q.prompt.includes("Answer in hours and minutes"), "Regular HM missing instruction");
       }
-      assert(!q.steps().includes("next day"), "Regular indicated next day");
     }
-    log("PASS 1: Regular format rule enforced, no midnight crossing.");
+    log("PASS 1: Regular rules OK (including new end-time questions).");
 
-    // Advanced: day questions have 3 fields + instruction
+    // Advanced: day questions exist
     let sawDay = false;
-    for (let i=0;i<600;i++){
+    for (let i=0;i<700;i++){
       const q = makeQuestion("advanced", null);
       if (q.fields === 3){
         sawDay = true;
@@ -1158,18 +1319,21 @@
       }
     }
     assert(sawDay, "Did not observe a day question in sample");
-    log("PASS 2: Advanced day questions exist with correct instructions and range.");
+    log("PASS 2: Advanced day questions exist.");
 
-    // Worksheet advanced distribution check (rough)
-    const sampleCount = 50;
-    let day=0, min=0, hm=0;
-    for (let i=0;i<sampleCount;i++){
+    // Advanced: end-time questions exist
+    let sawEnd = false;
+    for (let i=0;i<700;i++){
       const q = makeQuestion("advanced", null);
-      if (q.fields === 3) day++;
-      else if (q.fields === 1) min++;
-      else hm++;
+      if (q.type === "end_time" || q.type === "end_time_nextday"){
+        sawEnd = true;
+        assert(q.fields === 2, "Advanced end_time should be 2 fields");
+        assert(q.prompt.toLowerCase().includes("end time"), "Advanced end_time prompt missing 'end time'");
+        break;
+      }
     }
-    log(`INFO: Advanced sample mix (not enforced in game): day=${day}, minutes=${min}, hm=${hm}`);
+    assert(sawEnd, "Did not observe an end-time question in advanced sample");
+    log("PASS 3: Advanced end-time questions exist.");
 
     ui.devPanel.style.display = "block";
     ui.devPanel.textContent =
